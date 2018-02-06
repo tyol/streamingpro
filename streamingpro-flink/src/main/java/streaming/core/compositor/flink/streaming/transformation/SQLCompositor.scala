@@ -2,6 +2,7 @@ package streaming.core.compositor.flink.streaming.transformation
 
 import java.util
 
+import org.apache.flink.table.api.Table
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.log4j.Logger
 import serviceframework.dispatcher.{Compositor, Processor, Strategy}

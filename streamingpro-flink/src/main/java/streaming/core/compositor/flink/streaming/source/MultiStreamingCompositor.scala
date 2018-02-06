@@ -4,7 +4,7 @@ import java.util
 import java.util.Properties
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.log4j.Logger
@@ -61,7 +61,7 @@ class MultiStreamingCompositor[T] extends Compositor[T] with CompositorHelper {
           properties.setProperty("group.id", groupId)
 
           implicit val typeInfo = TypeInformation.of(classOf[String])
-          val kafkaStream = env.addSource(new FlinkKafkaConsumer08[String](topics, new SimpleStringSchema(), properties))
+          val kafkaStream = env.addSource(new FlinkKafkaConsumer010[String](topics, new SimpleStringSchema(), properties))
 
           tableEnv.registerDataStream[String](p("outputTable").toString, kafkaStream)
           kafkaStream

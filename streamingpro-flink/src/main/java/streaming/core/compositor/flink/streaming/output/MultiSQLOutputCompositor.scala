@@ -2,6 +2,7 @@ package streaming.core.compositor.flink.streaming.output
 
 import java.util
 
+import org.apache.flink.table.api.Table
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.api.scala.StreamTableEnvironment
 import org.apache.flink.table.sinks.{ConsoleTableSink, CsvTableSink}
@@ -47,9 +48,15 @@ class MultiSQLOutputCompositor[T] extends Compositor[T] with CompositorHelper wi
       format match {
         case "csv" | "com.databricks.spark.csv" =>
           val csvTableSink = new CsvTableSink(_resource)
-          ste.ingest(tableName).writeToSink(csvTableSink)
+          //ste.ingest(tableName).writeToSink(csvTableSink)
+          val projTable: Table = ste.scan(tableName)
+          ste.registerTable("projectedTable", projTable)
+          projTable.writeToSink(csvTableSink)
         case "console" | "print" =>
-          ste.ingest(tableName).writeToSink(new ConsoleTableSink(showNum))
+          //ste.ingest(tableName).writeToSink(new ConsoleTableSink(showNum))
+          val projTable: Table = ste.scan(tableName)
+          ste.registerTable("projectedTable", projTable)
+          projTable.writeToSink(new ConsoleTableSink(showNum))
         case _ =>
       }
     }
