@@ -14,6 +14,7 @@
         <module>streamingpro-dsl</module>
         <module>streamingpro-hbase</module>
         <module>streamingpro-redis</module>
+        <module>streamingpro-flink</module>
     </modules>
 
     <properties>
@@ -27,13 +28,14 @@
         <spark.sql.kafka.artifactId>spark-sql-kafka-0-10_${scala.binary.version}</spark.sql.kafka.artifactId>
         <spark.version>2.1.1</spark.version>
 
-        <flink.version>1.2.0</flink.version>
+        <!--flink.version>1.2.0</flink.version-->
+        <flink.version>1.3.2</flink.version>
 
         <serviceframework.version>2.0.0</serviceframework.version>
         <scope>provided</scope>
     </properties>
 
-
+    <!-->
     <repositories>
         <repository>
             <id>artima</id>
@@ -49,7 +51,7 @@
             <url>http://repository.pentaho.org/artifactory/repo/</url>
         </repository>
     </repositories>
-
+    <-->
     <profiles>
 
         <profile>
@@ -180,7 +182,8 @@
         </profile>
 
         <profile>
-            <id>flink-1.2.0</id>
+            <!--id>flink-1.2.0</id-->
+            <id>flink-${flink.version}</id>
             <modules>
                 <module>streamingpro-flink</module>
             </modules>
