@@ -50,6 +50,8 @@ StreamingPro 支持以Spark,Flink等作为底层分布式计算引擎，通过�
 5. 简化Spark SQL Server搭建成本：提供rest接口/thrift 接口，支持spark sql server 的负载均衡，自动将driver 注册到zookeeper上
 6. 探索更多的吧
 
+新分支说明：
+1. 在StreamingPro原有框架基础上，开展针对Flink流计算引擎的学习和研究。
 
 ## 项目模块说明
 
