@@ -4,6 +4,8 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.{Map => JMap}
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.api.CheckpointingMode
 
 /**
   * Created by allwefantasy on 20/3/2017.
@@ -16,7 +18,12 @@ class FlinkStreamingRuntime(_params: JMap[Any, Any]) extends StreamingRuntime wi
   val runtime = createRuntime
 
   def createRuntime = {
-    StreamExecutionEnvironment.getExecutionEnvironment
+    val senv = StreamExecutionEnvironment.getExecutionEnvironment
+    senv.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    senv.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
+    senv.enableCheckpointing(5000)
+
+    senv
   }
 
   override def startRuntime: StreamingRuntime = {

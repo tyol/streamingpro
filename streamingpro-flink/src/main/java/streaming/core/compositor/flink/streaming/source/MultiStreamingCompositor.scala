@@ -4,14 +4,17 @@ import java.util
 import java.util.Properties
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
+import org.apache.flink.api.common.typeinfo._
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer010,Kafka010JsonTableSource}
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
-import org.apache.flink.table.api.TableEnvironment
+import org.apache.flink.table.api.{TableEnvironment,TableSchema}
 import org.apache.log4j.Logger
 import serviceframework.dispatcher.{Compositor, Processor, Strategy}
 import streaming.core.compositor.flink.streaming.CompositorHelper
 import streaming.core.strategy.platform.FlinkStreamingRuntime
+import org.apache.flink.table.api.scala._
 
+import org.apache.flink.table.eventtime.LinearTimestamp
 import scala.collection.JavaConversions._
 
 
@@ -36,7 +39,9 @@ class MultiStreamingCompositor[T] extends Compositor[T] with CompositorHelper {
   private def getZk(params: util.Map[Any, Any]) = {
     getKafkaParams(params).getOrElse("zk", getKafkaParams(params).getOrElse("zookeeper", getKafkaParams(params).getOrElse("zkQuorum", "127.0.0.1")))
   }
-
+  private def getKB(params: util.Map[Any, Any]) = {
+    getKafkaParams(params).getOrElse("bootstrap.servers", getKafkaParams(params).getOrElse("kafka.brokers", getKafkaParams(params).getOrElse("kafka", "127.0.0.1")))
+  }
   private def getTopics(params: util.Map[Any, Any]) = {
     params.get("topics").asInstanceOf[String].split(",").toSet
   }
@@ -52,25 +57,34 @@ class MultiStreamingCompositor[T] extends Compositor[T] with CompositorHelper {
 
       p.getOrElse("format","-") match {
         case "kafka" =>
-          val zk = getZk(p)
-          val groupId = getKafkaParams(p).get("groupId").get
           val topics = getTopics(p).mkString(",")
-
+          val kafkaBroker = getKB(p)
           val properties = new Properties()
-          properties.setProperty("zookeeper.connect", zk)
-          properties.setProperty("group.id", groupId)
-
+          properties.setProperty("bootstrap.servers",kafkaBroker)
           implicit val typeInfo = TypeInformation.of(classOf[String])
-          val kafkaStream = env.addSource(new FlinkKafkaConsumer010[String](topics, new SimpleStringSchema(), properties))
-
-          tableEnv.registerDataStream[String](p("outputTable").toString, kafkaStream)
+          val kafkaStreamtmp = env.addSource(new FlinkKafkaConsumer010[String](topics, new SimpleStringSchema(), properties))
+          val kafkaStream = kafkaStreamtmp.assignTimestampsAndWatermarks(new LinearTimestamp)
+          tableEnv.registerDataStream(p("outputTable").toString, kafkaStream,'f0,'userActionTime.rowtime)
+          kafkaStream
+        case "kafka.json" =>
+          val topics = getTopics(p).mkString(",")
+          val kafkaBroker = getKB(p)
+          val properties = new Properties()
+          properties.setProperty("bootstrap.servers",kafkaBroker)
+          implicit val typeInfo = TypeInformation.of(classOf[String])
+          val kafkaStream = Kafka010JsonTableSource.builder().forTopic(topics).withKafkaProperties(properties).withSchema(TableSchema.builder()
+                            .field("name1",Types.STRING)
+                            .field("name2",Types.STRING)
+                            .field("name3",Types.STRING).build()).build()
+          tableEnv.registerTableSource(p("outputTable").toString,kafkaStream)
           kafkaStream
         case "socket" =>
-          val socketStream = env.socketTextStream(
+          val socketStreamtmp = env.socketTextStream(
             p.getOrElse("host","localhost").toString,
             p.getOrElse("port","9000").toString.toInt,
             '\n')
-          tableEnv.registerDataStream[String](p("outputTable").toString, socketStream)
+          val socketStream = socketStreamtmp.assignTimestampsAndWatermarks(new LinearTimestamp)
+          tableEnv.registerDataStream(p("outputTable").toString, socketStream,'f0,'userActionTime.rowtime)
           socketStream
         case _ =>
       }

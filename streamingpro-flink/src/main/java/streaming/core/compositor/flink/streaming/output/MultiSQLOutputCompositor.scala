@@ -1,11 +1,15 @@
 package streaming.core.compositor.flink.streaming.output
 
 import java.util
+import java.util.Properties
 
 import org.apache.flink.table.api.Table
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.api.scala.StreamTableEnvironment
 import org.apache.flink.table.sinks.{ConsoleTableSink, CsvTableSink}
+import org.apache.flink.table.sinks.PrintlnSink
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaProducer010,Kafka010JsonTableSink}
+import org.apache.flink.streaming.util.serialization.SimpleStringSchema
 import org.apache.log4j.Logger
 import serviceframework.dispatcher.{Compositor, Processor, Strategy}
 import streaming.core.compositor.flink.streaming.CompositorHelper
@@ -57,6 +61,17 @@ class MultiSQLOutputCompositor[T] extends Compositor[T] with CompositorHelper wi
           val projTable: Table = ste.scan(tableName)
           ste.registerTable("projectedTable", projTable)
           projTable.writeToSink(new ConsoleTableSink(showNum))
+          //projTable.writeToSink(new PrintlnSink)
+        case "kafka" =>
+          //val outputTopic = _cfg("topic")
+          //val kafkaBroker = _cfg("bootstrap.server")
+          //throw new IllegalArgumentException
+          val outputTopic = "yyj-output1"
+          val kafkaBroker = "c1:6667,c2:6667,c3:6667"
+          val properties = new Properties()
+          properties.setProperty("bootstrap.servers",kafkaBroker)
+          val proTable: Table = ste.scan(tableName)
+          proTable.writeToSink(new Kafka010JsonTableSink(outputTopic,properties))
         case _ =>
       }
     }
